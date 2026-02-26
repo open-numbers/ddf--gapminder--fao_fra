@@ -18,9 +18,9 @@ ingredients:
     dataset: *d1
     key: "geo,year"
     value:
-      - 2c_agb_total
-      - 2c_bgb_total
-      - 2c_dwb_total
+      - 2c_agb
+      - 2c_bgb
+      - 2c_dwb
       - 1a_forest_area
       - 4a_priv_own
       - wooremov
@@ -35,9 +35,9 @@ cooking:
         - fao-datapoints
       options:
         dictionary:
-          "2c_agb_total": agb_total
-          "2c_bgb_total": bgb_total
-          "2c_dwb_total": dwb_total
+          "2c_agb": agb
+          "2c_bgb": bgb
+          # "2c_dwb": dwb  # dead wood forest not included in the final calculation.
           "1a_forest_area": forest_area
           "4a_priv_own": priv_own
       result: fao-datapoints-translated
@@ -47,7 +47,7 @@ cooking:
       options:
         op:
           privately_owned_forest_land_percent: "priv_own / forest_area * 100"
-          biomass_stock_in_forest_tons: "(agb_total + bgb_total + dwb_total) * 1000000"
+          biomass_stock_in_forest_tons: "(agb + bgb)"
           wood_removal_cubic_meters: "wooremov * 1000"
       result: fao-datapoints-op
 
