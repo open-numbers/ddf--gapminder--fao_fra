@@ -1,121 +1,119 @@
 # basic info
 info:
-    id: fao-sg-dataset
-    base:
-        - &d1 open-numbers/ddf--unfao--fra
-
+  id: fao-sg-dataset
+  base:
+    - &d1 open-numbers/ddf--unfao--fra
 
 config:
-    # the path to search recipe files to include
-    recipes_dir: ./
-    # the path to search dictionary files
-    dictionary_dir: ../translation_dictionaries
-
+  # the path to search recipe files to include
+  recipes_dir: ./
+  # the path to search dictionary files
+  dictionary_dir: ../translation_dictionaries
 
 include:
-    - recipe_gw_common.yaml
-
+  - recipe_gw_common.yaml
 
 ingredients:
-    - id: fao-datapoints
-      dataset: *d1
-      key: "geo,year"
-      value:
-          - 2c_agb
-          - 2c_bgb
-          - 1a_forest_area
-          - 4a_priv_own
-          - wooremov
-    - id: fao-forestry-countries
-      dataset: *d1
-      key: geo
-
+  - id: fao-datapoints
+    dataset: *d1
+    key: "geo,year"
+    value:
+      - 2c_agb_total
+      - 2c_bgb_total
+      - 2c_dwb_total
+      - 1a_forest_area
+      - 4a_priv_own
+      - wooremov
+  - id: fao-forestry-countries
+    dataset: *d1
+    key: geo
 
 cooking:
-    datapoints:
-        - procedure: translate_header
-          ingredients:
-              - fao-datapoints
-          options:
-              dictionary:
-                  "2c_agb": agb
-                  "2c_bgb": bgb
-                  "1a_forest_area": forest_area
-                  "4a_priv_own": priv_own
-          result: fao-datapoints-translated
-        - procedure: run_op
-          ingredients:
-              - fao-datapoints-translated
-          options:
-              op:
-                  privately_owned_forest_land_percent: "priv_own / forest_area * 100"
-                  biomass_stock_in_forest_tons: "(agb + bgb) * 1000000"
-                  wood_removal_cubic_meters: "wooremov * 1000"
-          result: fao-datapoints-op
+  datapoints:
+    - procedure: translate_header
+      ingredients:
+        - fao-datapoints
+      options:
+        dictionary:
+          "2c_agb_total": agb_total
+          "2c_bgb_total": bgb_total
+          "2c_dwb_total": dwb_total
+          "1a_forest_area": forest_area
+          "4a_priv_own": priv_own
+      result: fao-datapoints-translated
+    - procedure: run_op
+      ingredients:
+        - fao-datapoints-translated
+      options:
+        op:
+          privately_owned_forest_land_percent: "priv_own / forest_area * 100"
+          biomass_stock_in_forest_tons: "(agb_total + bgb_total + dwb_total) * 1000000"
+          wood_removal_cubic_meters: "wooremov * 1000"
+      result: fao-datapoints-op
 
-        - procedure: translate_header
-          ingredients:
-              - fao-datapoints-op
-          options:
-              dictionary:
-                  year: time
-          result: fao-datapoints-op-translated
+    - procedure: translate_header
+      ingredients:
+        - fao-datapoints-op
+      options:
+        dictionary:
+          year: time
+      result: fao-datapoints-op-translated
 
-        - procedure: filter
-          ingredients:
-              - fao-datapoints-op-translated
-          options:
-              item:
-                  - biomass_stock_in_forest_tons
-                  - privately_owned_forest_land_percent
-                  - wood_removal_cubic_meters
-          result: fao_fore-datapoints-filtered-0
+    - procedure: filter
+      ingredients:
+        - fao-datapoints-op-translated
+      options:
+        item:
+          - biomass_stock_in_forest_tons
+          - privately_owned_forest_land_percent
+          - wood_removal_cubic_meters
+      result: fao_fore-datapoints-filtered-0
 
-        - procedure: translate_column
-          ingredients:
-              - fao-forestry-countries
-          options:
-              column: name
-              target_column: geo_new
-              dictionary:
-                  base: gm-country-synonym
-                  key: synonym
-                  value: geo
-          result: fao-forestry-countries-aligned
+    - procedure: translate_column
+      ingredients:
+        - fao-forestry-countries
+      options:
+        column: name
+        target_column: geo_new
+        dictionary:
+          base: gm-country-synonym
+          key: synonym
+          value: geo
+      result: fao-forestry-countries-aligned
 
-        - procedure: translate_column
-          ingredients:
-              - fao_fore-datapoints-filtered-0
-          options:
-              column: geo
-              dictionary:
-                  base: fao-forestry-countries-aligned
-                  key: geo
-                  value: geo_new
-          result: fao-forestry-datapoints-aligned
-        - procedure: filter
-          ingredients:
-              - fao-forestry-datapoints-aligned
-          options:
-              row:
-                  time:
-                      $lt: 9999
-          result: fao_fore-datapoints-final
-    concepts:
-        - procedure: extract_concepts
-          ingredients:
-              -  fao_fore-datapoints-final
-          result: fao_fore-datapoints-concepts
-        - procedure: merge
-          ingredients:
-              - fao_fore-datapoints-concepts
-              - gw-concepts-geo
-              - gw-concepts-discrete
-          options:
-              deep: true
-          result: concepts-final
+    - procedure: translate_column
+      ingredients:
+        - fao_fore-datapoints-filtered-0
+      options:
+        column: geo
+        dictionary:
+          base: fao-forestry-countries-aligned
+          key: geo
+          value: geo_new
+      result: fao-forestry-datapoints-aligned
+    - procedure: filter
+      ingredients:
+        - fao-forestry-datapoints-aligned
+      options:
+        row:
+          time:
+            $lt: 9999
+      result: fao_fore-datapoints-final
+  concepts:
+    - procedure: extract_concepts
+      ingredients:
+        - fao_fore-datapoints-final
+      result: fao_fore-datapoints-concepts
+    - procedure: merge
+      ingredients:
+        - fao_fore-datapoints-concepts
+        - gw-concepts-geo
+        - gw-concepts-discrete
+      options:
+        deep: true
+      result: concepts-final
 
 serving:
-    - id: fao_fore-datapoints-final
-    - id: gw-entities-geo
-    - id: concepts-final
+  - id: fao_fore-datapoints-final
+  - id: gw-entities-geo
+  - id: concepts-final
